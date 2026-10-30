@@ -36,6 +36,8 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
   })
   const [sessions, setSessions] = createSignal<Session[]>([])
   const [loading, setLoading] = createSignal(true)
+  // 拉取失败时置位：列表可能是陈旧的，必须让用户看出来
+  const [stale, setStale] = createSignal(false)
   const [spinner, setSpinner] = createSignal(0)
 
   // 不传 parentID：服务端同时返回根会话与子会话，本地按 parentID 分组。
@@ -49,8 +51,10 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
       })
       const items = response.data
       if (Array.isArray(items)) setSessions(items)
+      setStale(false)
     } catch {
-      // 网络或服务端错误：保留旧数据
+      // 保留旧数据，但标记为「可能已过期」——静默失败会让人把「拉取失败」读成「没有数据」
+      setStale(true)
     } finally {
       setLoading(false)
     }
@@ -147,6 +151,10 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
       </box>
       <Show when={view.open}>
         <Show when={!loading()} fallback={<text fg={theme.text.muted}>Loading...</text>}>
+          {/* 拉取失败时列表可能是旧的，必须显式说出来，否则会被当成「没有数据」 */}
+          <Show when={stale()}>
+            <text fg={theme.text.feedback.warning.base}>{"\u26A0"} 拉取失败，列表可能是旧的</text>
+          </Show>
           <Show when={visible().length > 0} fallback={<text fg={theme.text.muted}>No sessions yet</text>}>
             <For each={visible()}>
               {(session) => (
