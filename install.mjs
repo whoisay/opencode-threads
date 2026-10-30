@@ -7,7 +7,7 @@ import { join } from "node:path"
 
 // opencode v2 的全局配置目录在所有平台都是 ~/.config/opencode（除非设了 XDG_CONFIG_HOME），
 // 插件清单键是 opencode.json(c) 里的 plugins。
-const PLUGIN_SPEC = "opencode-sessions-sidebar"
+const PLUGIN_SPEC = "opencode-threads"
 
 function configDir() {
   return join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "opencode")
@@ -46,14 +46,14 @@ async function main() {
   if (await exists(target)) {
     const cfg = await readJSONC(target)
     if (!mergePlugin(cfg, PLUGIN_SPEC)) {
-      console.log(`[opencode-sessions-sidebar] Already in ${target}`)
+      console.log(`[opencode-threads] Already in ${target}`)
       return
     }
     await writeFile(target, JSON.stringify(cfg, null, 2) + "\n")
-    console.log(`[opencode-sessions-sidebar] Added to ${target}`)
+    console.log(`[opencode-threads] Added to ${target}`)
   } else {
     await writeFile(target, JSON.stringify({ $schema: "https://opencode.ai/config.json", plugins: [PLUGIN_SPEC] }, null, 2) + "\n")
-    console.log(`[opencode-sessions-sidebar] Created ${target}`)
+    console.log(`[opencode-threads] Created ${target}`)
   }
 
   console.log("\nDone! Restart OpenCode to see the Sessions sidebar panel.")

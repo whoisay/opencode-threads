@@ -245,7 +245,7 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
 }
 
 const tui: Plugin.Definition = {
-  id: "opencode-sessions-sidebar",
+  id: "opencode-threads",
   setup(context) {
     context.ui.slot({
       append: "sidebar.content",

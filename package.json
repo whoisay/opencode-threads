@@ -1,7 +1,7 @@
 {
-  "name": "opencode-sessions-sidebar",
-  "version": "0.2.0",
-  "description": "OpenCode TUI plugin displaying active sessions list in the sidebar",
+  "name": "opencode-threads",
+  "version": "1.0.0",
+  "description": "OpenCode TUI plugin listing project sessions in the sidebar, with subagent child sessions nested under their parent",
   "type": "module",
   "types": "dist/index.d.ts",
   "exports": {
@@ -21,7 +21,7 @@
     "README.md"
   ],
   "bin": {
-    "opencode-sessions-sidebar": "install.mjs"
+    "opencode-threads": "install.mjs"
   },
   "scripts": {
     "build": "tsc && node build.tui.mjs",
@@ -34,12 +34,15 @@
     "opencode-plugin",
     "tui",
     "sessions",
-    "sidebar"
+    "sidebar",
+    "subagent",
+    "threads"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mangome/opencode-sessions-sidebar.git"
+    "url": "git+https://github.com/whoisay/opencode-threads.git"
   },
+  "author": "whoisay",
   "license": "MIT",
   "peerDependencies": {
     "@opencode/plugin": ">=2.0.0",
