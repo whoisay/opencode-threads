@@ -1,6 +1,6 @@
 {
   "name": "opencode-threads",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "OpenCode TUI plugin listing project sessions in the sidebar, with subagent child sessions nested under their parent",
   "type": "module",
   "types": "dist/index.d.ts",
