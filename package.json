@@ -18,7 +18,8 @@
     "dist",
     "src",
     "install.mjs",
-    "README.md"
+    "README.md",
+    "README.zh-CN.md"
   ],
   "bin": {
     "opencode-threads": "install.mjs"
@@ -27,6 +28,8 @@
     "build": "tsc && node build.tui.mjs",
     "build:tui": "node build.tui.mjs",
     "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/*.test.mjs\"",
+    "verify": "tsc && node build.tui.mjs && node --test \"test/*.test.mjs\"",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

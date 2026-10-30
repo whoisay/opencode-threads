@@ -3,6 +3,14 @@
 import type { JSX } from "@opentui/solid"
 import type { Plugin } from "@opencode/plugin/tui"
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
+import {
+  childConnector,
+  parentOf,
+  sessionTitle,
+  shouldExpand,
+  splitTree,
+  visibleRoots,
+} from "./tree.js"
 
 type Ctx = Plugin.Context
 type Session = ReturnType<Ctx["data"]["session"]["list"]>[number]
@@ -48,47 +56,22 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
     }
   }
 
-  /** 只有根会话进主列表。 */
-  const roots = createMemo(() => sessions().filter((session) => !session.parentID))
-
-  /** parentID → 直接子会话，按时间升序，早的排在上面。 */
-  const childrenOf = createMemo(() => {
-    const map = new Map<string, Session[]>()
-    for (const session of sessions()) {
-      if (!session.parentID) continue
-      const siblings = map.get(session.parentID)
-      if (siblings) siblings.push(session)
-      else map.set(session.parentID, [session])
-    }
-    for (const siblings of map.values()) siblings.sort((a, b) => a.time.updated - b.time.updated)
-    return map
-  })
+  /** 根会话与子会话的分组，纯逻辑在 tree.ts，可被测试覆盖。 */
+  const tree = createMemo(() => splitTree(sessions()))
 
   /** 当前会话若是子会话，返回其父会话 id，用于定位和强制展开。 */
-  const currentParentID = createMemo(
-    () => sessions().find((session) => session.id === props.sessionID)?.parentID ?? null,
-  )
+  const currentParentID = createMemo(() => parentOf(sessions(), props.sessionID))
 
   const visible = createMemo(() => {
     const limit = view.maxSessions > 0 ? view.maxSessions : DEFAULT_MAX_SESSIONS
-    const sorted = [...roots()].sort((a, b) => b.time.updated - a.time.updated)
-    // 正在看子会话时，父会话必须留在可见范围内，否则会看不到自己所在的线程
-    const parentID = currentParentID()
-    if (parentID) {
-      const index = sorted.findIndex((session) => session.id === parentID)
-      if (index >= limit) {
-        const [parent] = sorted.splice(index, 1)
-        if (parent) sorted.unshift(parent)
-      }
-    }
-    return sorted.slice(0, limit)
+    return visibleRoots(tree().roots, currentParentID(), limit)
   })
 
   // 只在真的有会话在跑时才开定时器，避免空转。子会话也要算在内。
   createEffect(() => {
     const idle =
       !visible().some((session) => data.session.status(session.id) === "running") &&
-      ![...childrenOf().values()].some((siblings) =>
+      ![...tree().children.values()].some((siblings) =>
         siblings.some((session) => data.session.status(session.id) === "running"),
       )
     if (idle) return
@@ -115,7 +98,7 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
     })
   })
 
-  const title = (session: Session): string => session.title?.trim() || session.id.slice(0, 8)
+  const title = sessionTitle
 
   const bullet = (session: Session): { char: string; fg: typeof theme.text.base } => {
     if (data.session.status(session.id) === "running")
@@ -129,10 +112,11 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
     props.context.ui.router.navigate({ type: "session", sessionID })
   }
 
-  const hasChildren = (sessionID: string) => (childrenOf().get(sessionID)?.length ?? 0) > 0
+  const childrenOf = (sessionID: string) => tree().children.get(sessionID) ?? []
+  const hasChildren = (sessionID: string) => childrenOf(sessionID).length > 0
 
   // 正在看某个子会话时，它的父会话强制展开，否则看不到自己所在的位置
-  const isOpen = (sessionID: string) => expanded.ids.includes(sessionID) || sessionID === currentParentID()
+  const isOpen = (sessionID: string) => shouldExpand(sessionID, expanded.ids, currentParentID())
 
   const toggle = (sessionID: string) => {
     void updateExpanded((draft) => {
@@ -195,7 +179,7 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
                     </text>
                   </box>
                   <Show when={hasChildren(session.id) && isOpen(session.id)}>
-                    <For each={childrenOf().get(session.id) ?? []}>
+                    <For each={childrenOf(session.id)}>
                       {(child, index) => {
                         const running = () => data.session.status(child.id) === "running"
                         return (
@@ -215,9 +199,7 @@ function SessionsPanel(props: { context: Ctx; sessionID: string }): JSX.Element 
                             >
                               {running()
                                 ? SPINNER_FRAMES[spinner() % SPINNER_FRAMES.length]
-                                : index() === (childrenOf().get(session.id)?.length ?? 0) - 1
-                                  ? "\u2514"
-                                  : "\u251C"}
+                                : childConnector(index(), childrenOf(session.id).length)}
                             </text>
                             <text
                               fg={child.id === props.sessionID ? theme.text.base : theme.text.muted}
