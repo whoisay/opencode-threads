@@ -1,6 +1,6 @@
 {
   "name": "opencode-threads",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "OpenCode 侧边栏会话树：列出当前项目的会话，并把子代理会话折叠在派发它的父会话下面",
   "type": "module",
   "types": "dist/index.d.ts",
